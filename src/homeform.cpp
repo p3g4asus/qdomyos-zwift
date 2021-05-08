@@ -279,7 +279,7 @@ void homeform::pelotonWorkoutChanged(QString name, QString instructor)
 }
 
 QString homeform::getWritableAppDir() {
-    QString path = "";
+    QString path = "./";
 #if defined(Q_OS_ANDROID)
     path = getAndroidDataAppDir() + "/";
 #elif defined(Q_OS_MACOS) || defined(Q_OS_OSX)
@@ -1546,7 +1546,7 @@ bool homeform::strava_upload_file(QByteArray &data, QString remotename)
     strava_refreshtoken();
 
     QSettings settings;
-    QString token = settings.value("strava_accesstoken").toString();
+    QString token = "af52ee07c089455b5bd6a05d50ec6b31fa7c23da";
 
     // The V3 API doc said "https://api.strava.com" but it is not working yet
     QUrl url = QUrl( "https://www.strava.com/api/v3/uploads" );
@@ -1571,7 +1571,7 @@ bool homeform::strava_upload_file(QByteArray &data, QString remotename)
     activityTypePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"activity_type\""));
 
     // Map some known sports and default to ride for anything else
-    if(bluetoothManager->device()->deviceType() == bluetoothdevice::TREADMILL)
+    if(0)
       activityTypePart.setBody("run");
     else
       activityTypePart.setBody("ride");
@@ -1581,14 +1581,14 @@ bool homeform::strava_upload_file(QByteArray &data, QString remotename)
     activityNamePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"name\""));
 
     // use metadata config if the user selected it
-    QString activityName = " " + settings.value("strava_suffix", "#qdomyos-zwift").toString() ;
+    QString activityName = " " + settings.value("strava_suffix", "pyMoviz").toString() ;
     if(stravaPelotonActivityName.length())
     {
         activityName = stravaPelotonActivityName + " - " + stravaPelotonInstructorName + activityName;
     }
     else
     {
-        if(bluetoothManager->device()->deviceType() == bluetoothdevice::TREADMILL)
+        if(0)
         {
             activityName = "Run" + activityName;
         }
@@ -1853,6 +1853,9 @@ void homeform::sendMail()
 #define STRINGIFY(x)  _STR(x)
     SmtpClient smtp(STRINGIFY(SMTP_SERVER), 587, SmtpClient::TlsConnection);
     connect(&smtp, SIGNAL(smtpError(SmtpClient::SmtpError)), this, SLOT(smtpError(SmtpClient::SmtpError)));
+#elif defined (WIN32)
+#pragma message("stmp server is unset!")
+    return;
 #else
 #warning "stmp server is unset!"
     SmtpClient smtp("",25, SmtpClient::TlsConnection);
@@ -1865,6 +1868,9 @@ void homeform::sendMail()
 #define _STR(x) #x
 #define STRINGIFY(x)  _STR(x)
     smtp.setUser(STRINGIFY(SMTP_USERNAME));
+#elif defined (WIN32)
+#pragma message("stmp username is unset!")
+    return;
 #else
     #warning "smtp username is unset!"
     return;
@@ -1873,6 +1879,9 @@ void homeform::sendMail()
 #define _STR(x) #x
 #define STRINGIFY(x)  _STR(x)
     smtp.setPassword(STRINGIFY(SMTP_PASSWORD));
+#elif defined (WIN32)
+#pragma message("stmp password is unset!")
+    return;
 #else
 #warning "smtp password is unset!"
     return;
@@ -1969,12 +1978,12 @@ void homeform::sendMail()
         fit->setContentType("application/octet-stream");
         message.addPart(fit);
     }
-
+#ifdef SMTP_SERVER
     smtp.connectToHost();
     smtp.login();
     smtp.sendMail(message);
     smtp.quit();
-
+#endif
     // delete image variable TODO
 }
 

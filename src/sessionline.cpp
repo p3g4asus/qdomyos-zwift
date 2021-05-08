@@ -18,4 +18,51 @@ SessionLine::SessionLine(double speed, int8_t inclination, double distance, uint
     this->lapTrigger = lap;
 }
 
-SessionLine::SessionLine() {}
+SessionLine::SessionLine() {
+    elapsedTime = SESSIONLINE_INVALID_ELAPSED;
+}
+
+SessionLine::SessionLine(const SessionLine& cp) {
+    this->operator=(cp);
+}
+
+SessionLine& SessionLine::operator=(SessionLine const& rhs)& {
+    this->speed = rhs.speed;
+    this->inclination = rhs.inclination;
+    this->distance = rhs.distance;
+    this->watt = rhs.watt;
+    this->resistance = rhs.resistance;
+    this->peloton_resistance = rhs.peloton_resistance;
+    this->heart = rhs.heart;
+    this->pace = rhs.pace;
+    this->time = rhs.time;
+    this->cadence = rhs.cadence;
+    this->calories = rhs.calories;
+    this->elevationGain = rhs.elevationGain;
+    this->elapsedTime = rhs.elapsedTime;
+    this->lapTrigger = rhs.lapTrigger;
+    this->nsum = rhs.nsum;
+    return *this;
+}
+SessionLine& SessionLine::operator+=(SessionLine const& rhs)& {
+    if (elapsedTime!=rhs.elapsedTime) {
+        this->operator=(rhs);
+    }
+    else {
+        this->speed += rhs.speed;
+        this->inclination = rhs.inclination;
+        this->distance = rhs.distance;
+        this->watt += rhs.watt;
+        this->resistance = rhs.resistance;
+        this->peloton_resistance = rhs.peloton_resistance;
+        this->heart = rhs.heart;
+        this->pace = rhs.pace;
+        this->time = rhs.time;
+        this->cadence += rhs.cadence;
+        this->calories = rhs.calories;
+        this->elevationGain = rhs.elevationGain;
+        this->lapTrigger = rhs.lapTrigger;
+        this->nsum ++;
+    }
+    return *this;
+}

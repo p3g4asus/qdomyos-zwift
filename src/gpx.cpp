@@ -84,28 +84,29 @@ void gpx::save(QString filename, QList<SessionLine> session, bluetoothdevice::BL
         stream.writeTextElement("type", "53");
 
        stream.writeStartElement("trkseg");
+       double spd;
        foreach(SessionLine s, session)
        {
-           if(s.speed > 0)
+           if((spd = s.getSpeed()) > 0)
            {
                stream.writeStartElement("trkpt");
                stream.writeAttribute("lat", "0");
                stream.writeAttribute("lon", "0");
                stream.writeTextElement("ele", "0"); // replace with the cumulative inclination
                stream.writeTextElement("time", s.time.toString("yyyy-MM-ddTHH:mm:ssZ"));
-               stream.writeTextElement("speed", QString::number(s.speed / 3.6)); // meter per second
+               stream.writeTextElement("speed", QString::number(spd / 3.6)); // meter per second
                stream.writeStartElement("extensions");
-               stream.writeTextElement("power", QString::number(s.watt));
+               stream.writeTextElement("power", QString::number(s.getWatt()));
                stream.writeTextElement("gpxdata:hr", QString::number(s.heart));
-               stream.writeTextElement("gpxdata:cadence", QString::number(s.cadence));
+               stream.writeTextElement("gpxdata:cadence", QString::number(s.getCadence()));
                stream.writeStartElement("gpxtpx:TrackPointExtension");
-               stream.writeTextElement("gpxtpx:speed", QString::number(s.speed / 3.6)); // meter per second
+               stream.writeTextElement("gpxtpx:speed", QString::number(spd / 3.6)); // meter per second
                stream.writeTextElement("gpxtpx:hr", QString::number(s.heart));
-               stream.writeTextElement("gpxtpx:cad", QString::number(s.cadence));
+               stream.writeTextElement("gpxtpx:cad", QString::number(s.getCadence()));
                stream.writeTextElement("gpxtpx:distance", QString::number(s.distance));
                stream.writeEndElement(); //gpxtpx:TrackPointExtension
                stream.writeStartElement("gpxpx:PowerExtension");
-               stream.writeTextElement("gpxpx:PowerInWatts", QString::number(s.watt));
+               stream.writeTextElement("gpxpx:PowerInWatts", QString::number(s.getWatt()));
                stream.writeEndElement(); //gpxtpx:PowerExtension
                stream.writeEndElement(); //extensions
                stream.writeEndElement(); //trkpt

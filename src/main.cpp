@@ -40,7 +40,7 @@ bool noConsole = false;
 bool onlyVirtualBike = false;
 bool onlyVirtualTreadmill = false;
 bool testResistance = false;
-bool forceQml = false;
+bool forceQml = true;
 bool miles = false;
 bool bluetooth_no_reconnection = false;
 bool bluetooth_relaxed = false;
@@ -65,7 +65,7 @@ QCoreApplication* createApplication(int &argc, char *argv[])
 
     for (int i = 1; i < argc; ++i) {
         if (!qstrcmp(argv[i], "-no-gui"))
-            nogui = true;        
+            nogui = true;
         if (!qstrcmp(argv[i], "-qml"))
             forceQml = true;
         if (!qstrcmp(argv[i], "-miles"))
@@ -79,7 +79,7 @@ QCoreApplication* createApplication(int &argc, char *argv[])
         if (!qstrcmp(argv[i], "-no-write-resistance"))
             noWriteResistance = true;
         if (!qstrcmp(argv[i], "-no-heart-service"))
-            noHeartService = true;        
+            noHeartService = true;
         if (!qstrcmp(argv[i], "-heart-service"))
             noHeartService = false;
         if (!qstrcmp(argv[i], "-only-virtualbike"))
@@ -91,7 +91,7 @@ QCoreApplication* createApplication(int &argc, char *argv[])
         if (!qstrcmp(argv[i], "-bluetooth_relaxed"))
             bluetooth_relaxed = true;
         if (!qstrcmp(argv[i], "-bike-cadence-sensor"))
-            bike_cadence_sensor = true;        
+            bike_cadence_sensor = true;
         if (!qstrcmp(argv[i], "-bike-power-sensor"))
             bike_power_sensor = true;
         if (!qstrcmp(argv[i], "-battery-service"))
@@ -128,7 +128,7 @@ QCoreApplication* createApplication(int &argc, char *argv[])
         return new QCoreApplication(argc, argv);
     else if(forceQml)
         return new QApplication(argc, argv);
-    else        
+    else
     {
         QApplication* a = new QApplication(argc, argv);
 
@@ -176,7 +176,7 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 #else
     if(logdebug == false)
 #endif
-      return;
+        return;
 
     QByteArray localMsg = msg.toLocal8Bit();
     const char *file = context.file ? context.file : "";
@@ -191,10 +191,10 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
         break;
     case QtWarningMsg:
         txt += QString("Warning: %1 %2 %3\n").arg(file).arg(function).arg(msg);
-    break;
+        break;
     case QtCriticalMsg:
         txt += QString("Critical: %1 %2 %3\n").arg(file).arg(function).arg(msg);
-    break;
+        break;
     case QtFatalMsg:
         txt += QString("Fatal: %1 %2 %3\n").arg(file).arg(function).arg(msg);
         abort();
@@ -217,11 +217,70 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
     (*QT_DEFAULT_MESSAGE_HANDLER)(type, context, msg);
 }
 
+#include <QDirIterator>
+void strava_do(homeform * h) {
+    QString trainingDir(homeform::getWritableAppDir() + "out_fit/");
+    QDir dir(trainingDir);
+    if (!dir.exists())
+        dir.mkpath(".");
+    QDirIterator it(homeform::getWritableAppDir() + "in_txt");
+    QString fileName, filePath;
+    QFileInfo fileInfo;
+    QRegExp regex("session2_([0-9]{8})_([0-9]{6})_([0-9]+)\\.txt");
+    QRegExp lineRegex("([0-9\\.]+)\\t([0-9\\.]+)\\t([0-9\\.]+)\\t([0-9\\.]+)\\t([0-9\\.]+)\\t([0-9\\.]+)\\t([0-9\\.]+)");
+    while (it.hasNext()) {
+        filePath = it.next();
+        fileInfo = it.fileInfo();
+        if (fileInfo.isFile() && fileInfo.completeSuffix() == "txt" && (fileName = it.fileName()).length() > 4 && regex.indexIn(fileName)>=0) {
+            QList<SessionLine> session;
+            QDateTime stdate = QDateTime::fromString(regex.cap(1) + " " + regex.cap(2), "yyyyMMdd HHmmss");
+            QFile inputFile(filePath);
+            if (inputFile.open(QIODevice::ReadOnly))
+            {
+                QTextStream in(&inputFile);
+                SessionLine mainSL;
+                while (!in.atEnd())
+                {
+                    QString line = in.readLine();
+                    if(lineRegex.indexIn(line) >= 0) {
+                        uint32_t elapsed = lineRegex.cap(1).toUInt();
+                        if (elapsed != mainSL.elapsedTime && mainSL.elapsedTime != SESSIONLINE_INVALID_ELAPSED)
+                            session.append(mainSL);
+                        SessionLine s(
+                                    lineRegex.cap(4).toDouble(),
+                                    0,
+                                    lineRegex.cap(2).toDouble(),
+                                    lineRegex.cap(6).toUInt(),
+                                    lineRegex.cap(7).toUInt(),
+                                    0,0,0,
+                                    lineRegex.cap(5).toUInt(),
+                                    lineRegex.cap(3).toDouble(),
+                                    0,elapsed, false, stdate.addSecs(elapsed));
+                        mainSL += s;
+                    }
+                }
+                session.append(mainSL);
+                inputFile.close();
+                qDebug() << "File"<<fileName<<" size"<<session.size();
+            }
+            if (session.size()) {
+                qfit::save(trainingDir + fileName + ".fit", session, bluetoothdevice::BIKE);
+                /*QFile f(trainingDir + fileName + ".fit");
+                f.open(QFile::OpenModeFlag::ReadOnly);
+                QByteArray fitfile = f.readAll();
+                h->strava_upload_file(fitfile,fileName);
+                f.close();
+                return;*/
+            }
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
 #ifdef Q_OS_LINUX
 #ifndef Q_OS_ANDROID
-    if (getuid()) 
+    if (getuid())
     {
         printf("Runme as root!\n");
         return -1;
@@ -231,7 +290,7 @@ int main(int argc, char *argv[])
 #endif
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
-    QScopedPointer<QCoreApplication> app(createApplication(argc, argv));            
+    QScopedPointer<QCoreApplication> app(createApplication(argc, argv));
 #else
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QScopedPointer<QApplication> app(new QApplication(argc, argv));
@@ -297,6 +356,7 @@ int main(int argc, char *argv[])
     qfit::save(path + QDateTime::currentDateTime().toString().replace(":", "_") + ".fit", l, bluetoothdevice::BIKE);
     return 0;
 #endif
+    strava_do(0);
 
 #if !defined(Q_OS_ANDROID) && !defined(Q_OS_IOS)
     if(!forceQml)
@@ -340,7 +400,7 @@ int main(int argc, char *argv[])
                          qobject_cast<QGuiApplication *>(app.data()), [url](QObject *obj, const QUrl &objUrl) {
             if (!obj && url == objUrl)
                 QCoreApplication::exit(-1);
-        }, Qt::QueuedConnection);        
+        }, Qt::QueuedConnection);
 
 #if defined(Q_OS_ANDROID)
         auto result = QtAndroid::checkPermission(QString("android.permission.READ_EXTERNAL_STORAGE"));
@@ -374,7 +434,6 @@ int main(int argc, char *argv[])
         engine.load(url);
         homeform* h = new homeform(&engine, bl);
         QObject::connect(qobject_cast<QCoreApplication *>(app.data()), &QCoreApplication::aboutToQuit, h, &homeform::aboutToQuit);
-
         {
 #ifdef Q_OS_ANDROID
             KeepAwakeHelper helper;

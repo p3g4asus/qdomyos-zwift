@@ -260,12 +260,12 @@ public:
 
     Q_INVOKABLE void sendMail();
 
-    QList<double> workout_watt_points() { QList<double> l; foreach(SessionLine s, Session) {l.append(s.watt);} return l; }
+    QList<double> workout_watt_points() { QList<double> l; foreach(SessionLine s, Session) {l.append(s.getWatt());} return l; }
     QList<double> workout_heart_points() { QList<double> l; foreach(SessionLine s, Session) {l.append(s.heart);} return l; }
-    QList<double> workout_cadence_points() { QList<double> l; foreach(SessionLine s, Session) {l.append(s.cadence);} return l; }
+    QList<double> workout_cadence_points() { QList<double> l; foreach(SessionLine s, Session) {l.append(s.getCadence());} return l; }
     QList<double> workout_resistance_points() { QList<double> l; foreach(SessionLine s, Session) {l.append(s.resistance);} return l; }
     QList<double> workout_peloton_resistance_points() { QList<double> l; foreach(SessionLine s, Session) {l.append(s.peloton_resistance);} return l; }
-
+    bool strava_upload_file(QByteArray &data, QString remotename);
 private:
     QList<QObject *> dataList;
     QList<SessionLine> Session;
@@ -329,7 +329,6 @@ private:
     void strava_refreshtoken();
     QNetworkReply *replyStrava;
     QAbstractOAuth::ModifyParametersFunction buildModifyParametersFunction(QUrl clientIdentifier,QUrl clientIdentifierSharedKey);
-    bool strava_upload_file(QByteArray &data, QString remotename);
 
     void update();
     void backup();

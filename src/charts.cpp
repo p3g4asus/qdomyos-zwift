@@ -82,13 +82,13 @@ void charts::update()
         if(ui->inclination->isChecked())
             chart_series_inclination->append(g, static_cast<double>(parent->Session[index].inclination));
         if(ui->speed->isChecked())
-            chart_series_speed->append(g, static_cast<qreal>(parent->Session[index].speed));
+            chart_series_speed->append(g, static_cast<qreal>(parent->Session[index].getSpeed()));
         if(ui->pace->isChecked())
             chart_series_pace->append(g, static_cast<qreal>(parent->Session[index].pace));
         if(ui->heart->isChecked())
             chart_series_heart->append(g, static_cast<qreal>(parent->Session[index].heart));
         if(ui->watt->isChecked())
-            chart_series_watt->append(g, static_cast<qreal>(parent->Session[index].watt));
+            chart_series_watt->append(g, static_cast<qreal>(parent->Session[index].getWatt()));
         if(ui->resistance->isChecked())
             chart_series_resistance->append(g, static_cast<qreal>(parent->Session[index].resistance));
     }
